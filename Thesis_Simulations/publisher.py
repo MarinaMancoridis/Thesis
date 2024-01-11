@@ -54,7 +54,7 @@ def peer_review(participants, scientific_record):
 
     for i in range(0, number_published):
         selected_participant = random.choices(participant_ids, probabilities)[0]
-        print(f"participant selected: {selected_participant}")
+#         print(f"participant selected: {selected_participant}")
         
         # update scientific record
         for p in participants:

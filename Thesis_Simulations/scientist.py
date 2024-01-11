@@ -2,11 +2,11 @@ import random
 import evaluation
 
 
-# return 1 with a 70% probability, 0 otherwise
-def random_sample():
+# return 1 with a probability of rate, 0 otherwise
+def random_sample(rate):
     random_number = random.random()
     
-    if random_number < 0.7:
+    if random_number < rate:
         return 1
     else:
         return 0
@@ -29,9 +29,9 @@ class Participant:
         self.bin_choice = -1                                                 # the bin chosen to be reported
         reported_results = None                                              # the results reported
         
-    def sample(self, scientific_record, num_bins):
+    def sample(self, scientific_record, num_bins, bins_to_probs):
         sample_number = len(self.bin_sample_order)
-        bin_number, value = draw(len(self.values_sampled), self.bin_sample_order, self.values_sampled, scientific_record, num_bins)
+        bin_number, value = draw(len(self.values_sampled), self.bin_sample_order, self.values_sampled, scientific_record, num_bins, bins_to_probs)
         self.bin_sample_order.append(bin_number)
         self.values_sampled.append(value)
 
@@ -52,7 +52,7 @@ class Participant:
     
 # to gather data, scientists choose actions (draws from a given bin)
 # that maximize their expected value of information
-def draw(draw_number, bin_sample_order, values_sampled, scientific_record, num_bins):
+def draw(draw_number, bin_sample_order, values_sampled, scientific_record, num_bins, bins_to_probs):
     # expected value of information for drawing from each of the bins
     evis = {}
     
@@ -97,7 +97,7 @@ def draw(draw_number, bin_sample_order, values_sampled, scientific_record, num_b
     # If there are ties, choose a bin randomly from the tied bins
     chosen_bin = random.choice(max_evi_bins)
     
-    return chosen_bin, random_sample()
+    return chosen_bin, random_sample(bins_to_probs[chosen_bin])
 
 
 
