@@ -6,21 +6,21 @@ import random
 
 # defines the utility that a publisher assigns to a report, when the report is 
 # accompanied by data (subset or full reporting styles)
-def utility_publish_data(report, scientific_record, bin_choice):    
+def utility_publish_data(report, scientific_record, bin_choice, rel_pl_data_val, rel_pl_surprise_val, rel_pl_bias_val):    
     # bump by amount of supporting data
-    score = report["0"] + report["1"]
+    score = rel_pl_data_val * (report["0"] + report["1"])
     
     # bump by level of surprise
     count_zero_p = scientific_record[bin_choice][0]
     count_one_p = scientific_record[bin_choice][1]
     kl = evaluation.kl_divergence(count_zero_p, count_one_p, count_zero_p + report["0"], count_one_p + report["1"])
-    score += 10 * kl
+    score += 10 * rel_pl_surprise_val * kl
 
-    # bump by publication bias (+5% if positive and -5% if negative)
+    # bump by publication bias (+5% if positive and -5% if negative, for example)
     if report["0"] > report["1"]:
-        score = 0.95 * score
+        score = (1 - rel_pl_bias_val) * score
     else:
-        score = 1.05 * score
+        score = (1 + rel_pl_bias_val) * score
 
 #     print(f"final score {score}")
     return score
@@ -33,13 +33,13 @@ def utility_publish_rate(report, scientific_record, bin_choice):
 
 
 # the peer review board selects reports for publication and returns the updated scientific record
-def peer_review(participants, scientific_record):  
+def peer_review(participants, scientific_record, rel_pl_data_val, rel_pl_surprise_val, rel_pl_bias_val):  
     actor_optimality = 1
     id_to_prob = {}
     total = 0
     
     for participant in participants:
-        report_util = utility_publish_data(participant.reported_results, scientific_record, participant.bin_choice)
+        report_util = utility_publish_data(participant.reported_results, scientific_record, participant.bin_choice, rel_pl_data_val, rel_pl_surprise_val, rel_pl_bias_val)
         report_prob = math.exp(actor_optimality * report_util)
         id_to_prob[participant.id] = report_prob
         total += report_prob
