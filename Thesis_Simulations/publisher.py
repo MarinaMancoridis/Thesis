@@ -16,13 +16,17 @@ def utility_publish_data(report, scientific_record, bin_choice, rel_pl_data_val,
     kl = evaluation.kl_divergence(count_zero_p, count_one_p, count_zero_p + report["0"], count_one_p + report["1"])
     score += 10 * rel_pl_surprise_val * kl
 
+    # edge case if rel_pl_data_val, rel_pl_surprise_val = 0
+    if score == 0:
+        score = 1
+ 
     # bump by publication bias (+5% if positive and -5% if negative, for example)
-    if report["0"] > report["1"]:
-        score += (1 - rel_pl_bias_val) * score
+    if report["0"] >= report["1"]:
+        score -= rel_pl_bias_val * (score)
     else:
-        score += (1 + rel_pl_bias_val) * score
+        score += rel_pl_bias_val * (score)
 
-#     print(f"final score {score}")
+    print(f"   report {report['0']} zeros, {report['1']} ones got a score of {score}")
     return score
 
 
@@ -59,6 +63,7 @@ def peer_review(participants, scientific_record, rel_pl_data_val, rel_pl_surpris
         # update scientific record
         for p in participants:
             if p.id == selected_participant:
+                print(f"REPORTED BIN: {p.reported_results['0']} ZEROS, {p.reported_results['1']} ONES")
                 scientific_record[p.bin_choice][0] += p.reported_results["0"]
                 scientific_record[p.bin_choice][1] += p.reported_results["1"]
                 
