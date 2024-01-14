@@ -22,9 +22,9 @@ def utility_publish_data(report, scientific_record, bin_choice, rel_pl_data_val,
  
     # bump by publication bias (+5% if positive and -5% if negative, for example)
     if report["0"] >= report["1"]:
-        score -= rel_pl_bias_val * (score)
+        score -= rel_pl_bias_val * (score) * (report["0"] - report["1"]) # more penalty for more negative results
     else:
-        score += rel_pl_bias_val * (score)
+        score += rel_pl_bias_val * (score) * (report["1"] - report["0"]) # more reward for more positive results
 
     print(f"   report {report['0']} zeros, {report['1']} ones got a score of {score}")
     return score
@@ -57,8 +57,9 @@ def peer_review(participants, scientific_record, rel_pl_data_val, rel_pl_surpris
     probabilities = list(id_to_prob.values())
 
     for i in range(0, number_published):
+        print(probabilities)
+        
         selected_participant = random.choices(participant_ids, probabilities)[0]
-#         print(f"participant selected: {selected_participant}")
         
         # update scientific record
         for p in participants:
@@ -69,6 +70,7 @@ def peer_review(participants, scientific_record, rel_pl_data_val, rel_pl_surpris
                 
         # remove that participant from the list
         selected_index = participant_ids.index(selected_participant)
+        print(f"selected index: {selected_index}")
         del participant_ids[selected_index]
         del probabilities[selected_index]
         
