@@ -18,9 +18,9 @@ def utility_publish_data(report, scientific_record, bin_choice, rel_pl_data_val,
 
     # bump by publication bias (+5% if positive and -5% if negative, for example)
     if report["0"] > report["1"]:
-        score = (1 - rel_pl_bias_val) * score
+        score += (1 - rel_pl_bias_val) * score
     else:
-        score = (1 + rel_pl_bias_val) * score
+        score += (1 + rel_pl_bias_val) * score
 
 #     print(f"final score {score}")
     return score

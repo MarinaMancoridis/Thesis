@@ -31,6 +31,6 @@ def total_entropy_score(scientific_record, bins_to_probs):
     
     for bin_num in bins_to_probs:
         num_bins += 1
-        total_kl_divergence += kl_divergence(1, 1, scientific_record[bin_num][0], scientific_record[bin_num][1])
+        total_kl_divergence += kl_divergence(1 - bins_to_probs[bin_num], bins_to_probs[bin_num], scientific_record[bin_num][0], scientific_record[bin_num][1])
 
     return total_kl_divergence / num_bins
