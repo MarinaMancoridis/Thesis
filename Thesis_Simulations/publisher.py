@@ -1,6 +1,7 @@
 import evaluation
 import math
 import random
+import scipy.stats as stats
 
 ''' the peer review layer takes in reports from scientists, selects reports for publication, and thereby updates the scientific record. The scientific record consists of the number of positive and negative draws associated with each bin. We do this because we assume that published data is given fully (not just publishing some sort of aggregation of the submitted results).'''
 
@@ -93,7 +94,7 @@ def peer_review(participants, scientific_record, rel_pl_data_val, rel_pl_surpris
 
 # the peer review board selects reports for publication and returns the updated scientific record
 # it also returns the number of reports that were "true publications" and "false publications"
-def peer_review_with_fpr(participants, scientific_record, rel_pl_data_val, rel_pl_surprise_val, rel_pl_bias_val, num_draws):  
+def peer_review_with_fpr(participants, scientific_record, rel_pl_data_val, rel_pl_surprise_val, rel_pl_bias_val, num_draws, bins_to_probs):  
     actor_optimality = 1
     id_to_prob = {}
     total = 0
@@ -122,7 +123,18 @@ def peer_review_with_fpr(participants, scientific_record, rel_pl_data_val, rel_p
         # update scientific record
         for p in participants:
             if p.id == selected_participant:
-#                 print(f"REPORTED BIN: {p.reported_results['0']} ZEROS, {p.reported_results['1']} ONES")
+                print(f"REPORTED BIN: {p.reported_results['0']} ZEROS, {p.reported_results['1']} ONES")
+                p_zero = 1 - bins_to_probs[p.bin_choice] 
+                p_value = 1 - stats.binom.cdf(p.reported_results["1"] - 1, p.reported_results["1"] + p.reported_results["0"], p_zero)
+                print(f"p_zero: {p_zero}")
+                print(f"p value: {p_value}")
+                if p_value < 0.1:
+                    num_false_published += 1
+                    print("it was a false publication")
+                else:
+                    num_true_published += 1
+                    print("it was a true publication")
+
                 scientific_record[p.bin_choice][0] += p.reported_results["0"]
                 scientific_record[p.bin_choice][1] += p.reported_results["1"]
                 
