@@ -89,3 +89,51 @@ def peer_review(participants, scientific_record, rel_pl_data_val, rel_pl_surpris
         probabilities = [prob / total_prob for prob in probabilities]
 
     return scientific_record
+
+
+# the peer review board selects reports for publication and returns the updated scientific record
+# it also returns the number of reports that were "true publications" and "false publications"
+def peer_review_with_fpr(participants, scientific_record, rel_pl_data_val, rel_pl_surprise_val, rel_pl_bias_val, num_draws):  
+    actor_optimality = 1
+    id_to_prob = {}
+    total = 0
+    num_true_published = 0
+    num_false_published = 0
+    
+    for participant in participants:
+        report_util = utility_publish_data(participant.reported_results, scientific_record, participant.bin_choice, rel_pl_data_val, rel_pl_surprise_val, rel_pl_bias_val, num_draws)
+        report_prob = math.exp(actor_optimality * report_util)
+        id_to_prob[participant.id] = report_prob
+        total += report_prob
+    
+    for prob in id_to_prob:
+        id_to_prob[prob] /= total
+    
+    # publish 20% of the submitted reports
+    number_published = math.ceil(len(participants)/5)
+    participant_ids = list(id_to_prob.keys())
+    probabilities = list(id_to_prob.values())
+
+    for i in range(0, number_published):
+#         print(probabilities)
+        
+        selected_participant = random.choices(participant_ids, probabilities)[0]
+        
+        # update scientific record
+        for p in participants:
+            if p.id == selected_participant:
+#                 print(f"REPORTED BIN: {p.reported_results['0']} ZEROS, {p.reported_results['1']} ONES")
+                scientific_record[p.bin_choice][0] += p.reported_results["0"]
+                scientific_record[p.bin_choice][1] += p.reported_results["1"]
+                
+        # remove that participant from the list
+        selected_index = participant_ids.index(selected_participant)
+#         print(f"selected index: {selected_index}")
+        del participant_ids[selected_index]
+        del probabilities[selected_index]
+        
+        # Re-normalize the probabilities
+        total_prob = sum(probabilities)
+        probabilities = [prob / total_prob for prob in probabilities]
+
+    return scientific_record, num_true_published, num_false_published
