@@ -6,15 +6,25 @@ import random
 
 # defines the utility that a publisher assigns to a report, when the report is 
 # accompanied by data (subset or full reporting styles)
-def utility_publish_data(report, scientific_record, bin_choice, rel_pl_data_val, rel_pl_surprise_val, rel_pl_bias_val):    
+def utility_publish_data(report, scientific_record, bin_choice, rel_pl_data_val, rel_pl_surprise_val, rel_pl_bias_val, num_draws):    
     # bump by amount of supporting data
-    score = rel_pl_data_val * (report["0"] + report["1"])
+#     score = rel_pl_data_val * (report["0"] + report["1"])
+    score = rel_pl_data_val * (report["0"] + report["1"]) / num_draws
     
     # bump by level of surprise
     count_zero_p = scientific_record[bin_choice][0]
     count_one_p = scientific_record[bin_choice][1]
-    kl = evaluation.kl_divergence(count_zero_p, count_one_p, count_zero_p + report["0"], count_one_p + report["1"])
-    score += 10 * rel_pl_surprise_val * kl
+    draws_in_bin = report["0"] + report["1"]
+    expected_zeros = draws_in_bin * (count_zero_p)/(count_zero_p + count_one_p)
+    expected_ones = draws_in_bin * (count_one_p)/(count_zero_p + count_one_p)
+    if draws_in_bin != 0:
+        score += rel_pl_surprise_val * ((abs(report["0"] - expected_zeros) + abs(report["1"] - expected_ones)) / (draws_in_bin))
+                                  
+#     # bump by level of surprise
+#     count_zero_p = scientific_record[bin_choice][0]
+#     count_one_p = scientific_record[bin_choice][1]
+#     kl = evaluation.kl_divergence(count_zero_p, count_one_p, count_zero_p + report["0"], count_one_p + report["1"])
+#     score += 10 * rel_pl_surprise_val * kl
 
     # edge case if rel_pl_data_val, rel_pl_surprise_val = 0
     if score == 0:
@@ -26,7 +36,7 @@ def utility_publish_data(report, scientific_record, bin_choice, rel_pl_data_val,
     else:
         score += rel_pl_bias_val * (score) * (report["1"] - report["0"]) # more reward for more positive results
 
-    print(f"   report {report['0']} zeros, {report['1']} ones got a score of {score}")
+#     print(f"   report {report['0']} zeros, {report['1']} ones got a score of {score}")
     return score
 
 
@@ -37,13 +47,13 @@ def utility_publish_rate(report, scientific_record, bin_choice):
 
 
 # the peer review board selects reports for publication and returns the updated scientific record
-def peer_review(participants, scientific_record, rel_pl_data_val, rel_pl_surprise_val, rel_pl_bias_val):  
+def peer_review(participants, scientific_record, rel_pl_data_val, rel_pl_surprise_val, rel_pl_bias_val, num_draws):  
     actor_optimality = 1
     id_to_prob = {}
     total = 0
     
     for participant in participants:
-        report_util = utility_publish_data(participant.reported_results, scientific_record, participant.bin_choice, rel_pl_data_val, rel_pl_surprise_val, rel_pl_bias_val)
+        report_util = utility_publish_data(participant.reported_results, scientific_record, participant.bin_choice, rel_pl_data_val, rel_pl_surprise_val, rel_pl_bias_val, num_draws)
         report_prob = math.exp(actor_optimality * report_util)
         id_to_prob[participant.id] = report_prob
         total += report_prob
@@ -57,20 +67,20 @@ def peer_review(participants, scientific_record, rel_pl_data_val, rel_pl_surpris
     probabilities = list(id_to_prob.values())
 
     for i in range(0, number_published):
-        print(probabilities)
+#         print(probabilities)
         
         selected_participant = random.choices(participant_ids, probabilities)[0]
         
         # update scientific record
         for p in participants:
             if p.id == selected_participant:
-                print(f"REPORTED BIN: {p.reported_results['0']} ZEROS, {p.reported_results['1']} ONES")
+#                 print(f"REPORTED BIN: {p.reported_results['0']} ZEROS, {p.reported_results['1']} ONES")
                 scientific_record[p.bin_choice][0] += p.reported_results["0"]
                 scientific_record[p.bin_choice][1] += p.reported_results["1"]
                 
         # remove that participant from the list
         selected_index = participant_ids.index(selected_participant)
-        print(f"selected index: {selected_index}")
+#         print(f"selected index: {selected_index}")
         del participant_ids[selected_index]
         del probabilities[selected_index]
         
