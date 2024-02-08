@@ -81,7 +81,6 @@ def peer_review(participants, scientific_record, rel_pl_data_val, rel_pl_surpris
                 
         # remove that participant from the list
         selected_index = participant_ids.index(selected_participant)
-#         print(f"selected index: {selected_index}")
         del participant_ids[selected_index]
         del probabilities[selected_index]
         
