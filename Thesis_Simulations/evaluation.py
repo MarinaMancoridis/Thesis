@@ -6,7 +6,8 @@ def kl_divergence(count_zero_p, count_one_p, count_zero_q, count_one_q):
     p_probs = [count_zero_p/(count_zero_p + count_one_p), (count_one_p)/(count_zero_p + count_one_p)]
     q_probs = [count_zero_q/(count_zero_q + count_one_q), (count_one_q)/(count_zero_q + count_one_q)]
 
-    return entropy(p_probs, q_probs)
+    return entropy(q_probs, p_probs)
+#     return entropy(p_probs, q_probs)
 
 
 # this determines how well scientists have determined the correct parameters for each arm in the multi-armed bandit game
