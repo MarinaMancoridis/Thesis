@@ -193,3 +193,163 @@ def peer_review_with_scale(participants, scientific_record, rel_pl_data_val, rel
         probabilities = [prob / total_prob for prob in probabilities]
 
     return scientific_record
+
+
+# the peer review board selects reports for publication and returns the updated scientific record
+def peer_review_unexplored_bins(participants, scientific_record, rel_pl_data_val, rel_pl_surprise_val, rel_pl_bias_val, num_draws, seen_bins):  
+    actor_optimality = 1
+    id_to_prob = {}
+    total = 0
+    num_new = 0
+    new_seen_bins = seen_bins
+    
+    for participant in participants:
+        report_util = utility_publish_data(participant.reported_results, scientific_record, participant.bin_choice, rel_pl_data_val, rel_pl_surprise_val, rel_pl_bias_val, num_draws)
+        report_prob = math.exp(actor_optimality * report_util)
+        id_to_prob[participant.id] = report_prob
+        total += report_prob
+    
+    for prob in id_to_prob:
+        id_to_prob[prob] /= total
+    
+    # publish 20% of the submitted reports
+    number_published = math.ceil(len(participants)/5)
+    participant_ids = list(id_to_prob.keys())
+    probabilities = list(id_to_prob.values())
+
+    for i in range(0, number_published):
+#         print(probabilities)
+        
+        selected_participant = random.choices(participant_ids, probabilities)[0]
+        
+        # update scientific record
+        for p in participants:
+            if p.id == selected_participant:
+#                 print(f"REPORTED BIN: {p.reported_results['0']} ZEROS, {p.reported_results['1']} ONES")
+                if (seen_bins[p.bin_choice] == False):
+                    num_new += 1
+                    new_seen_bins[p.bin_choice] = True
+            
+                scientific_record[p.bin_choice][0] += p.reported_results["0"]
+                scientific_record[p.bin_choice][1] += p.reported_results["1"]
+                
+        # remove that participant from the list
+        selected_index = participant_ids.index(selected_participant)
+        del participant_ids[selected_index]
+        del probabilities[selected_index]
+        
+        # Re-normalize the probabilities
+        total_prob = sum(probabilities)
+        probabilities = [prob / total_prob for prob in probabilities]
+
+    return scientific_record, num_new, new_seen_bins
+
+# the peer review board selects reports for publication and returns the updated scientific record
+def peer_review_distance_reported_true(participants, scientific_record, rel_pl_data_val, rel_pl_surprise_val, rel_pl_bias_val, num_draws):  
+    actor_optimality = 1
+    id_to_prob = {}
+    total = 0
+    num_new = 0
+    total_dist = 0
+    count_published = 0
+        
+        
+    for participant in participants:
+        report_util = utility_publish_data(participant.reported_results, scientific_record, participant.bin_choice, rel_pl_data_val, rel_pl_surprise_val, rel_pl_bias_val, num_draws)
+        report_prob = math.exp(actor_optimality * report_util)
+        id_to_prob[participant.id] = report_prob
+        total += report_prob
+    
+    for prob in id_to_prob:
+        id_to_prob[prob] /= total
+    
+    # publish 20% of the submitted reports
+    number_published = math.ceil(len(participants)/5)
+    participant_ids = list(id_to_prob.keys())
+    probabilities = list(id_to_prob.values())
+
+    for i in range(0, number_published):
+#         print(probabilities)
+        
+        selected_participant = random.choices(participant_ids, probabilities)[0]
+        
+        # update scientific record
+        for p in participants:
+            if p.id == selected_participant:
+#                 print(f'ones reported: {p.reported_results["1"]}')
+#                 print(f'zeros reported: {p.reported_results["0"]}')
+
+                if not ((p.reported_results["1"] == 0) and (p.reported_results["0"] == 0)):
+                    reported_rate = p.reported_results["1"] / (p.reported_results["1"] + p.reported_results["0"])
+                    true_rate = scientific_record[p.bin_choice][1] / (scientific_record[p.bin_choice][1] + scientific_record[p.bin_choice][0])
+                    total_dist += abs(reported_rate - true_rate)
+                    count_published += 1
+                
+                scientific_record[p.bin_choice][0] += p.reported_results["0"]
+                scientific_record[p.bin_choice][1] += p.reported_results["1"]
+                
+        # remove that participant from the list
+        selected_index = participant_ids.index(selected_participant)
+        del participant_ids[selected_index]
+        del probabilities[selected_index]
+        
+        # Re-normalize the probabilities
+        total_prob = sum(probabilities)
+        probabilities = [prob / total_prob for prob in probabilities]
+        
+        if count_published == 0:
+            avg_dist = 0
+            print("warning: average distance is zero")
+        else:
+            avg_dist = total_dist * 1.0 / count_published
+
+    return scientific_record, num_new, avg_dist
+
+# the peer review board selects reports for publication and returns the updated scientific record
+def peer_review_over_exploration(participants, scientific_record, rel_pl_data_val, rel_pl_surprise_val, rel_pl_bias_val, num_draws, num_reports_per_bin):  
+    actor_optimality = 1
+    id_to_prob = {}
+    total = 0
+    num_new = 0
+    total_dist = 0
+    count_published = 0
+        
+        
+    for participant in participants:
+        report_util = utility_publish_data(participant.reported_results, scientific_record, participant.bin_choice, rel_pl_data_val, rel_pl_surprise_val, rel_pl_bias_val, num_draws)
+        report_prob = math.exp(actor_optimality * report_util)
+        id_to_prob[participant.id] = report_prob
+        total += report_prob
+    
+    for prob in id_to_prob:
+        id_to_prob[prob] /= total
+    
+    # publish 20% of the submitted reports
+    number_published = math.ceil(len(participants)/5)
+    participant_ids = list(id_to_prob.keys())
+    probabilities = list(id_to_prob.values())
+
+    for i in range(0, number_published):
+#         print(probabilities)
+        
+        selected_participant = random.choices(participant_ids, probabilities)[0]
+        
+        # update scientific record
+        for p in participants:
+            if p.id == selected_participant:
+                num_reports_per_bin[p.bin_choice] += 1
+                
+                scientific_record[p.bin_choice][0] += p.reported_results["0"]
+                scientific_record[p.bin_choice][1] += p.reported_results["1"]
+                
+        # remove that participant from the list
+        selected_index = participant_ids.index(selected_participant)
+        del participant_ids[selected_index]
+        del probabilities[selected_index]
+        
+        # Re-normalize the probabilities
+        total_prob = sum(probabilities)
+        probabilities = [prob / total_prob for prob in probabilities]
+ 
+
+    return scientific_record, num_new, num_reports_per_bin
